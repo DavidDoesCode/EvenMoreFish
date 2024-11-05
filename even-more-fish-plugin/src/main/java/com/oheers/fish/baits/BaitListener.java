@@ -10,6 +10,7 @@ import com.oheers.fish.utils.nbt.NbtKeys;
 import com.oheers.fish.utils.nbt.NbtUtils;
 import com.oheers.fish.utils.nbt.NbtVersion;
 import de.tr7zw.changeme.nbtapi.NBT;
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -120,6 +121,7 @@ public class BaitListener implements Listener {
         }
 
         NBT.modify(fishingRod, nbt -> {
+            Bukkit.getServer().broadcastMessage("CONVERT, appliedBaitString: " + appliedBaitString);
             nbt.getOrCreateCompound(NbtKeys.EMF_COMPOUND).setString(NbtKeys.EMF_APPLIED_BAIT, appliedBaitString);
         });
 

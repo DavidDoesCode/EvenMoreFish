@@ -3,6 +3,7 @@ package com.oheers.fish.utils.nbt;
 import de.tr7zw.changeme.nbtapi.NBT;
 import de.tr7zw.changeme.nbtapi.iface.ReadableItemNBT;
 import de.tr7zw.changeme.nbtapi.iface.ReadableNBT;
+import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.BlockState;
 import org.bukkit.inventory.ItemStack;
@@ -19,6 +20,7 @@ public class NbtUtils {
     public static boolean hasKey(final ItemStack item, final String key) {
         final NbtVersion nbtVersion = NbtVersion.getVersion(item);
         final NamespacedKey namespacedKey = getNamespacedKey(key);
+        Bukkit.getServer().broadcastMessage(key);
         return NBT.get(item, nbt -> {
             return hasKey(nbtVersion,namespacedKey, nbt);
         });
@@ -34,6 +36,7 @@ public class NbtUtils {
     }
 
     private static boolean hasKey(final @NotNull NbtVersion nbtVersion, final NamespacedKey namespacedKey, final ReadableNBT nbt) {
+        Bukkit.getServer().broadcastMessage("nbtVersion: " + nbtVersion.toString());
         return switch (nbtVersion) {
             case NBTAPI -> nbt.hasTag(namespacedKey.toString());
             case LEGACY -> {
@@ -43,7 +46,16 @@ public class NbtUtils {
                 }
                 yield false;
             }
-            case COMPAT -> nbt.getCompound(namespacedKey.getNamespace()).hasTag(namespacedKey.getKey());
+            case COMPAT -> {
+                Bukkit.getServer().broadcastMessage(nbt.toString());
+
+                Bukkit.getServer().broadcastMessage("hasKey namespace" + namespacedKey.getNamespace());
+                Bukkit.getServer().broadcastMessage("hasKey key" + namespacedKey.getKey());
+
+                boolean value = nbt.getCompound(namespacedKey.getNamespace()).hasTag(namespacedKey.getKey());
+                Bukkit.getServer().broadcastMessage(String.valueOf(value));
+                yield value;
+            }
         };
     }
 
@@ -59,7 +71,11 @@ public class NbtUtils {
             case COMPAT -> nbt.getCompound(namespacedKey.getNamespace()).getString(namespacedKey.getKey());
             case LEGACY -> {
                 if (nbt.hasTag(NbtKeys.PUBLIC_BUKKIT_VALUES)) {
-                    yield nbt.getCompound(NbtKeys.PUBLIC_BUKKIT_VALUES).getString(namespacedKey.toString());
+                    String baitString = nbt.getCompound(NbtKeys.PUBLIC_BUKKIT_VALUES).getString(namespacedKey.toString());
+                    if(baitString.isEmpty())
+                        yield null;
+                    else
+                        yield baitString;
                 }
                 yield null;
             }
@@ -78,6 +94,7 @@ public class NbtUtils {
 
     public static String[] getBaitArray(final ItemStack item) {
         final String appliedBait = NbtUtils.getString(item, NbtKeys.EMF_APPLIED_BAIT);
+        Bukkit.getServer().broadcastMessage("getBaitArray: " + appliedBait);
         if (appliedBait == null) return new String[0];
         return appliedBait.split(",");
     }

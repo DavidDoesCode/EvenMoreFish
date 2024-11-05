@@ -10,6 +10,7 @@ import com.oheers.fish.utils.nbt.NbtKeys;
 import com.oheers.fish.utils.nbt.NbtUtils;
 import de.tr7zw.changeme.nbtapi.NBT;
 import de.tr7zw.changeme.nbtapi.iface.ReadWriteNBT;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -19,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -112,8 +114,14 @@ public class BaitNBTManager {
         AtomicBoolean maxBait = new AtomicBoolean(false);
         AtomicInteger cursorModifier = new AtomicInteger();
 
+        Bukkit.getServer().broadcastMessage("DO WE SEE THIS WITH TOOL STATS DISABLED?");
+        NBT.get(item, nbt -> {
+            Bukkit.getServer().broadcastMessage(nbt.toString());
+        });
+
         StringBuilder combined = new StringBuilder();
         if (isBaitedRod(item)) {
+            Bukkit.getServer().broadcastMessage("isBaitedRod true");
             try {
                 if (doingLoreStuff) {
                     ItemMeta meta = item.getItemMeta();
@@ -128,6 +136,9 @@ public class BaitNBTManager {
             }
 
             String[] baitList = NbtUtils.getBaitArray(item);
+
+            for(int i = 0; i < baitList.length; i++)
+                Bukkit.getServer().broadcastMessage("baitlist " + baitList[i]);
 
             boolean foundBait = false;
 
@@ -189,6 +200,7 @@ public class BaitNBTManager {
                 ReadWriteNBT compound = nbt.getOrCreateCompound(NbtKeys.EMF_COMPOUND);
                 if (quantity > bait.getMaxApplications() && bait.getMaxApplications() != -1) {
                     combined.append(bait.getName()).append(":").append(bait.getMaxApplications());
+                    Bukkit.getServer().broadcastMessage("NBTmodify: " + combined.toString());
                     compound.setString(NbtKeys.EMF_APPLIED_BAIT, combined.toString());
                     cursorModifier.set(-bait.getMaxApplications());
                     maxBait.set(true);
@@ -361,11 +373,20 @@ public class BaitNBTManager {
                 int baitCount = 0;
 
                 for (String bait : rodNBT.split(",")) {
-                    baitCount++;
-                    Message message = new Message(BaitFile.getInstance().getBaitFormat());
-                    message.setAmount(bait.split(":")[1]);
-                    message.setBait(getBaitFormatted(bait.split(":")[0]));
-                    lore.add(message.getRawMessage());
+                    if(bait.equals("")) {
+                        Bukkit.getServer().getLogger().warning("EMF + ToolStats fix: Empty bait");
+                        continue;
+                    }
+                    try {
+                        Bukkit.getServer().broadcastMessage(bait);
+                        baitCount++;
+                        Message message = new Message(BaitFile.getInstance().getBaitFormat());
+                        message.setAmount(bait.split(":")[1]);
+                        message.setBait(getBaitFormatted(bait.split(":")[0]));
+                        lore.add(message.getRawMessage());
+                    } catch (Exception e) {
+                        Bukkit.getServer().getLogger().warning("Exception EMF: " + bait);
+                    }
                 }
 
                 if (BaitFile.getInstance().showUnusedBaitSlots()) {
